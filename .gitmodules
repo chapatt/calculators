@@ -1,0 +1,6 @@
+[submodule "chapatt-web-widget-tk"]
+	path = chapatt-web-widget-tk
+	url = https://github.com/chapatt/chapatt-web-widget-tk
+[submodule "getEmPixels"]
+	path = getEmPixels
+	url = https://github.com/tysonmatanich/getEmPixels
