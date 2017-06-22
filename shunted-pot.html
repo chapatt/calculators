@@ -57,37 +57,48 @@
 
             chartProperties.plotXScale = chartProperties.w;
 
-            chartProperties.yScaleNames = [];
-            chartProperties.fnsByYScale = []; // parallel to yScaleNames
-            fns.forEach(function(item) {
-                if (chartProperties.yScaleNames.includes(item.yScale)) {
-                    chartProperties.fnsByYScale[chartProperties.yScaleNames.indexOf(item.yScale)].push(item);
+            chartProperties.plotYScaleNames = [];
+            chartProperties.fnsIndicesByPlotYScale = []; // parallel to plotYScaleNames
+            fns.forEach(function(item, index) {
+                if (chartProperties.plotYScaleNames.includes(item.yScale)) {
+                    chartProperties.fnsIndicesByPlotYScale[chartProperties.plotYScaleNames.indexOf(item.yScale)].push(index);
                 } else {
-                    chartProperties.yScaleNames.push(item.yScale);
-                    chartProperties.fnsByYScale[chartProperties.yScaleNames.indexOf(item.yScale)] = [];
-                    chartProperties.fnsByYScale[chartProperties.yScaleNames.indexOf(item.yScale)].push(item);
+                    chartProperties.plotYScaleNames.push(item.yScale);
+                    chartProperties.fnsIndicesByPlotYScale[chartProperties.plotYScaleNames.indexOf(item.yScale)] = [];
+                    chartProperties.fnsIndicesByPlotYScale[chartProperties.plotYScaleNames.indexOf(item.yScale)].push(index);
                 }
             });
 
-            // To create fn value arrays:
-            // x values are from chartProperties.plotX0 to <= chartProperties.plotXMax
-            // incremented by 1
+            // parallel to fns
+            chartProperties.fnsPoints = fns.map(function(item) {
+                var points = [];
 
-            // parallel to yScaleNames
-            chartProperties.plotYScales = chartProperties.fnsByYScale.map(function(item) {
-                var fnsYMax = (item.length < 2) ?
-                    item[0].fn(1) :
-                    item.reduce(function(a, b) {
-                        return { fn: function() { return Math.max(a.fn(1), b.fn(1)); } };
-                    }).fn();
+                for (var i=1; i <= chartProperties.plotXMax; ++i) {
+                    points.push(item.fn(i / chartProperties.plotXMax));
+                }
 
-                return chartProperties.h / fnsYMax; 
+                return points;
             });
 
-            var fnsYMax = fns.reduce(function(a, b) {
-                return {fn: function() { return Math.max(a.fn(1), b.fn(1)); }};
-            }).fn();
-            chartProperties.plotYScale = chartProperties.h / fnsYMax;
+            // parallel to fns
+            chartProperties.fnsMax = chartProperties.fnsPoints.map(function(item) {
+                return Math.max.apply(null, item);
+            });
+
+            chartProperties.fnsMaxByPlotYScale = chartProperties.fnsIndicesByPlotYScale.map(function(item) {
+                var fnsMaxYScale = [];
+
+                item.forEach(function(item) {
+                    fnsMaxYScale.push(chartProperties.fnsMax[item]);
+                });
+
+                return fnsMaxYScale;
+            });
+
+            // parallel to plotYScaleNames
+            chartProperties.plotYScales = chartProperties.fnsMaxByPlotYScale.map(function(item) {
+                return chartProperties.h / Math.max.apply(null, item); 
+            });
 
             chartProperties.cursorLineWidth = 1;
             chartProperties.graphLineWidth = 2;
@@ -140,7 +151,7 @@
             var cursorPlotX = chartProperties.plotX0 + (chartProperties.w * cursorX);
             var cursorPlotYs = [];
             fns.forEach(function(item) {
-               cursorPlotYs.push(chartProperties.plotY0 - (chartProperties.plotYScales[chartProperties.yScaleNames.indexOf(item.yScale)] * item.fn(cursorX)));
+               cursorPlotYs.push(chartProperties.plotY0 - (chartProperties.plotYScales[chartProperties.plotYScaleNames.indexOf(item.yScale)] * item.fn(cursorX)));
             });
             var cursorPlotYMax = Math.min.apply(null, cursorPlotYs);
 
@@ -212,7 +223,7 @@
         function plotFn(ctx, chartProperties, fn, lineWidth) {
             ctx.save();
 
-            var yScale = chartProperties.plotYScales[chartProperties.yScaleNames.indexOf(fn.yScale)];
+            var yScale = chartProperties.plotYScales[chartProperties.plotYScaleNames.indexOf(fn.yScale)];
 
             ctx.beginPath();
             ctx.moveTo(chartProperties.plotX0,
