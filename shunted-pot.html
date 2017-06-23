@@ -73,8 +73,8 @@
             chartProperties.fnsPoints = fns.map(function(item) {
                 var points = [];
 
-                for (var i=1; i <= chartProperties.plotXMax; ++i) {
-                    points.push(item.fn(i / chartProperties.plotXMax));
+                for (var i=1; chartProperties.plotX0 + i <= chartProperties.plotXMax; ++i) {
+                    points.push(item.fn(i / chartProperties.plotXScale));
                 }
 
                 return points;
@@ -106,9 +106,7 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             plotAxes(ctx, chartProperties, 'Fraction of Full Rotation', 'Resistance');
-            fns.forEach(function(item, index) {
-                plotFn(ctx, chartProperties, item, 2);
-            });
+            plotFns(ctx, chartProperties, fns);
             plotCursor(ctx, chartProperties, fns, cursorX, chartProperties.marginTop);
             plotLegend(ctx, chartProperties, fns, chartProperties.marginTop + (chartProperties.h / 2));
         }
@@ -221,24 +219,26 @@
             ctx.restore();
         }
 
-        function plotFn(ctx, chartProperties, fn, lineWidth) {
+        function plotFns(ctx, chartProperties, fns) {
             ctx.save();
 
-            var yScale = chartProperties.plotYScales[chartProperties.plotYScaleNames.indexOf(fn.yScale)];
+            fns.forEach(function(item, index) {
+                var yScale = chartProperties.plotYScales[chartProperties.plotYScaleNames.indexOf(item.yScale)];
 
-            ctx.beginPath();
-            ctx.moveTo(chartProperties.plotX0,
-                chartProperties.plotY0 - (yScale * (fn.fn(i / chartProperties.plotXScale))));
+                ctx.beginPath();
+                ctx.moveTo(chartProperties.plotX0,
+                    chartProperties.plotY0 - (yScale * (item.fn(0))));
 
-            for (var i = 1; chartProperties.plotX0 + i <= chartProperties.plotXMax; ++i) {
-                ctx.lineTo(chartProperties.plotX0 + i,
-                    chartProperties.plotY0 - (yScale * (fn.fn(i / chartProperties.plotXScale))));
-            }
+                for (var i = 1; chartProperties.plotX0 + i <= chartProperties.plotXMax; ++i) {
+                    ctx.lineTo(chartProperties.plotX0 + i,
+                        chartProperties.plotY0 - (yScale * chartProperties.fnsPoints[index][i]));
+                }
 
-            ctx.strokeStyle = fn.color;
-            ctx.lineWidth = lineWidth;
-            ctx.setLineDash(fn.dash);
-            ctx.stroke();
+                ctx.strokeStyle = item.color;
+                ctx.lineWidth = item.lineWidth;
+                ctx.setLineDash(item.dash);
+                ctx.stroke();
+            });
 
             ctx.restore();
         }
@@ -326,6 +326,7 @@
                     pointFill: 'rgb(255, 255, 255)',
                     dash: [5, 5],
                     pointDash: [],
+                    lineWidth: 2,
                     yScale: 'scale0',
                     unit: rUnit
                 },
@@ -336,6 +337,7 @@
                     pointFill: 'rgb(255, 255, 255)',
                     dash: [2, 2],
                     pointDash: [3, 3],
+                    lineWidth: 2,
                     yScale: 'scale0',
                     unit: rUnit
                 },
@@ -346,6 +348,7 @@
                     pointFill: 'rgb(0, 255, 0)',
                     dash: [],
                     pointDash: [],
+                    lineWidth: 2,
                     yScale: 'scale1',
                     unit: fracUnit,
                     plotCursorPercentage: false
@@ -357,6 +360,7 @@
                     pointFill: 'rgb(255, 255, 255)',
                     dash: [5, 5],
                     pointDash: [],
+                    lineWidth: 2,
                     yScale: 'scale0',
                     unit: rUnit
                 },
@@ -367,6 +371,7 @@
                     pointFill: 'rgb(255, 255, 255)',
                     dash: [2, 2],
                     pointDash: [3, 3],
+                    lineWidth: 2,
                     yScale: 'scale0',
                     unit: rUnit
                 },
@@ -377,6 +382,7 @@
                     pointFill: 'rgb(0, 0, 255)',
                     dash: [],
                     pointDash: [],
+                    lineWidth: 2,
                     yScale: 'scale1',
                     unit: fracUnit,
                     plotCursorPercentage: false
@@ -396,6 +402,7 @@
                     pointFill: 'rgb(255, 255, 255)',
                     dash: [5, 5],
                     pointDash: [],
+                    lineWidth: 2,
                     yScale: 'scale0',
                     unit: rUnit,
                     plotCursorPercentage: false
@@ -412,6 +419,7 @@
                     pointFill: 'rgb(255, 255, 255)',
                     dash: [2, 2],
                     pointDash: [3, 3],
+                    lineWidth: 2,
                     yScale: 'scale0',
                     unit: rUnit,
                     plotCursorPercentage: false
@@ -428,6 +436,7 @@
                     pointFill: 'rgb(255, 0, 0)',
                     dash: [],
                     pointDash: [],
+                    lineWidth: 2,
                     yScale: 'scale1',
                     unit: fracUnit,
                     plotCursorPercentage: false
