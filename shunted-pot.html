@@ -44,10 +44,10 @@
             var ctx = canvas.getContext("2d");
             var chartProperties = {};
 
-            chartProperties.marginLeft = 50;
-            chartProperties.marginRight = 200;
             chartProperties.marginTop = 50;
+            chartProperties.marginRight = 220;
             chartProperties.marginBottom = 50;
+            chartProperties.marginLeft = 50;
             chartProperties.plotX0 = chartProperties.marginLeft;
             chartProperties.plotXMax = canvas.width - chartProperties.marginRight;
             chartProperties.w = chartProperties.plotXMax - chartProperties.plotX0;
@@ -108,33 +108,119 @@
             plotAxes(ctx, chartProperties, 'Fraction of Full Rotation', 'Resistance');
             plotFns(ctx, chartProperties, fns);
             plotCursor(ctx, chartProperties, fns, cursorX, chartProperties.marginTop);
-            plotLegend(ctx, chartProperties, fns, chartProperties.marginTop + (chartProperties.h / 2));
+            plotKey(ctx, chartProperties, fns, chartProperties.marginTop + (chartProperties.h / 2));
         }
 
-        function plotLegend(ctx, chartProperties, fns, legendPlotY) {
+        function plotKey(ctx, chartProperties, fns, legendPlotY) {
+            var keyData = {
+                title: 'x = 50%',
+                linesBySection: []
+            };
+
+            function drawLineSymbol(color, dash, ctx, chartProperties, x, y) {
+                ctx.beginPath();
+                ctx.moveTo(x - (chartProperties.fontSize / 2), y);
+                ctx.lineTo(x + (chartProperties.fontSize / 2), y);
+                ctx.strokeStyle = color;
+                ctx.setLineDash(dash);
+                ctx.stroke();
+            }
+
+            chartProperties.fnsIndicesByPlotYScale.forEach(function(item, yScaleI, array) {
+                keyData.linesBySection.push([]);
+
+                item.forEach(function(fnsIndex, fnI) {
+                    var text = fns[fnsIndex].name;
+
+                    var color = fns[fnsIndex].color; 
+                    var dash = fns[fnsIndex].dash;
+                    var symbolDrawingFn = drawLineSymbol.bind(null, color, dash);
+
+                    keyData.linesBySection[yScaleI].push({
+                        symbolDrawingFn: symbolDrawingFn, text: text
+                    });
+                });
+            });
+
+            plotLegend(ctx, chartProperties, legendPlotY, keyData);
+        }
+
+        function plotLegend(ctx, chartProperties, legendPlotY, keyData) {
             ctx.save();
 
             var fontSize = chartProperties.fontSize;
             var lineSpacing = fontSize;
             var left = chartProperties.plotXMax + 10;
+            var padding = fontSize / 2;
 
             ctx.font = fontSize.toString() + 'px sans-serif';
             ctx.fillStyle = 'rgb(0, 0, 0)';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
             ctx.lineWidth = chartProperties.graphLineWidth;
+            var maxTextWidth = 0;
 
-            fns.forEach(function (item, index) {
-                ctx.fillText(item.name, left + (1.5 * fontSize), legendPlotY + (index * lineSpacing));
-                ctx.beginPath();
-                ctx.moveTo(left, Math.round(legendPlotY + (index * lineSpacing)) + (fontSize / 2));
-                ctx.lineTo(left + fontSize, Math.round(legendPlotY + (index * lineSpacing)) + (fontSize / 2));
-                ctx.strokeStyle = item.color; 
-                ctx.setLineDash(item.dash);
-                ctx.stroke();
+            var hLineYs = [legendPlotY];
+
+            keyData.linesBySection.forEach(function(section, sectionI, array) {
+                var prevItemLen = sectionI ?
+                    array[sectionI - 1].length :
+                    0;
+                var blockPlotY;
+
+                section.forEach(function(line, lineI) {
+                    blockPlotY = legendPlotY + padding + ((prevItemLen + lineI) * lineSpacing) + (sectionI ? padding * 2 : 0);
+
+                    // Draw text
+                    var text = line.text;
+                    ctx.fillText(text, left + padding + (1.5 * fontSize), blockPlotY);
+                    var textWidth = ctx.measureText(text).width;
+                    if (textWidth > maxTextWidth) {
+                        maxTextWidth = textWidth;
+                    }
+
+                    // Draw symbol
+                    var x = left + padding + (fontSize / 2);
+                    var y = Math.round(blockPlotY + (fontSize / 2));
+                    line.symbolDrawingFn(ctx, chartProperties, x, y);
+                });
+
+                hLineYs.push(blockPlotY + fontSize + padding);
             });
 
+            /* box corner coordinates top-left, top-right, bottom-right, bottom-left */
+            var boxCoords = [];
+            boxCoords.push([left, hLineYs[0]]);
+            boxCoords.push([left + padding + (1.5 * fontSize) + maxTextWidth + padding, hLineYs[0]]);
+            boxCoords.push([left + padding + (1.5 * fontSize) + maxTextWidth + padding, hLineYs[hLineYs.length - 1]]);
+            boxCoords.push([left, hLineYs[hLineYs.length - 1]]);
+
+            /* Draw box */
+            ctx.beginPath();
+            boxCoords.forEach(function(item, index) {
+                if (index == 0)
+                    ctx.moveTo.apply(ctx, item);
+                else
+                    ctx.lineTo.apply(ctx, item);
+            });
+            ctx.closePath();
+            ctx.strokeStyle = 'rgb(0, 0, 0)'; 
+            ctx.setLineDash([0, 0]);
+            ctx.stroke();
+
+            /* Draw horizontal separators */
+            for (var i=1; i < hLineYs.length - 1; ++i) {
+                ctx.beginPath();
+                ctx.moveTo(left, hLineYs[i]);
+                ctx.lineTo(left + padding + (1.5 * fontSize) + maxTextWidth + padding, hLineYs[i]);
+                ctx.strokeStyle = 'rgb(0, 0, 0)'; 
+                ctx.setLineDash([0, 0]);
+                ctx.stroke();
+            }
+
             ctx.restore();
+
+            return boxCoords;
         }
 
         function plotCursor(ctx, chartProperties, fns, cursorX, legendPlotY) {
@@ -315,7 +401,7 @@
             var fns = [
                 {
                     fn: referenceTaperRout.bind(null, rRef, rRefTaper),
-                    name: 'Reference R\u2092\u1d64\u209c',
+                    name: 'Reference Rout',
                     color: 'rgb(0, 255, 0)',
                     pointFill: 'rgb(255, 255, 255)',
                     dash: [5, 5],
@@ -326,7 +412,7 @@
                 },
                 {
                     fn: referenceTaperRin.bind(null, rRef),
-                    name: 'Reference R\u1d62\u2099',
+                    name: 'Reference Rin',
                     color: 'rgb(0, 255, 0)',
                     pointFill: 'rgb(255, 255, 255)',
                     dash: [2, 2],
@@ -337,7 +423,7 @@
                 },
                 {
                     fn: referenceTaperVout.bind(null, rRef, rRefTaper),
-                    name: 'Reference V\u2092\u1d64\u209c',
+                    name: 'Reference Vout',
                     color: 'rgb(0, 255, 0)',
                     pointFill: 'rgb(0, 255, 0)',
                     dash: [],
@@ -349,7 +435,7 @@
                 },
                 {
                     fn: myTaperRout.bind(null, rPot, rTaper1, rTaper2),
-                    name: 'Shunted R\u2092\u1d64\u209c',
+                    name: 'Shunted Rout',
                     color: 'rgb(0, 0, 255)',
                     pointFill: 'rgb(255, 255, 255)',
                     dash: [5, 5],
@@ -360,7 +446,7 @@
                 },
                 {
                     fn: myTaperRin.bind(null, rPot, rTaper1, rTaper2),
-                    name: 'Shunted R\u1d62\u2099',
+                    name: 'Shunted Rin',
                     color: 'rgb(0, 0, 255)',
                     pointFill: 'rgb(255, 255, 255)',
                     dash: [2, 2],
@@ -371,7 +457,7 @@
                 },
                 {
                     fn: myTaperVout.bind(null, rPot, rTaper1, rTaper2),
-                    name: 'Shunted V\u2092\u1d64\u209c',
+                    name: 'Shunted Vout',
                     color: 'rgb(0, 0, 255)',
                     pointFill: 'rgb(0, 0, 255)',
                     dash: [],
@@ -391,7 +477,7 @@
                         var ref = referenceTaperRout(rRef, rRefTaper, x);
                         return Math.abs(mine - ref);
                     },
-                    name: 'R\u2092\u1d64\u209c Error',
+                    name: 'Rout Error',
                     color: 'rgb(255, 0, 0)',
                     pointFill: 'rgb(255, 255, 255)',
                     dash: [5, 5],
@@ -408,7 +494,7 @@
                         var ref = referenceTaperRin(rRef, x);
                         return Math.abs(mine - ref);
                     },
-                    name: 'R\u1d62\u2099 Error',
+                    name: 'Rin Error',
                     color: 'rgb(255, 0, 0)',
                     pointFill: 'rgb(255, 255, 255)',
                     dash: [2, 2],
@@ -425,7 +511,7 @@
                         var ref = referenceTaperVout(rRef, rRefTaper, x);
                         return Math.abs(mine - ref);
                     },
-                    name: 'V\u2092\u1d64\u209c Error',
+                    name: 'Vout Error',
                     color: 'rgb(255, 0, 0)',
                     pointFill: 'rgb(255, 0, 0)',
                     dash: [],
