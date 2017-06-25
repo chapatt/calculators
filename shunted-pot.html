@@ -112,7 +112,7 @@
         }
 
         function plotKey(ctx, chartProperties, fns, legendPlotY) {
-            var keyData = {
+            var legendData = {
                 title: 'Key',
                 linesBySection: []
             };
@@ -127,7 +127,7 @@
             }
 
             chartProperties.fnsIndicesByPlotYScale.forEach(function(item, yScaleI, array) {
-                keyData.linesBySection.push([]);
+                legendData.linesBySection.push([]);
 
                 item.forEach(function(fnsIndex, fnI) {
                     var text = fns[fnsIndex].name;
@@ -136,16 +136,16 @@
                     var dash = fns[fnsIndex].dash;
                     var symbolDrawingFn = drawLineSymbol.bind(null, color, dash);
 
-                    keyData.linesBySection[yScaleI].push({
+                    legendData.linesBySection[yScaleI].push({
                         symbolDrawingFn: symbolDrawingFn, text: text
                     });
                 });
             });
 
-            plotLegend(ctx, chartProperties, legendPlotY, keyData);
+            plotLegend(ctx, chartProperties, legendPlotY, legendData);
         }
 
-        function plotLegend(ctx, chartProperties, legendPlotY, keyData) {
+        function plotLegend(ctx, chartProperties, legendPlotY, legendData) {
             ctx.save();
 
             var fontSize = chartProperties.fontSize;
@@ -166,7 +166,7 @@
             /*
              * Register title block bottom secretary
              */
-            if (keyData.title) {
+            if (legendData.title) {
                 blockPlotY = legendPlotY + padding;
 
                 var textWidth = ctx.measureText(text).width;
@@ -177,13 +177,13 @@
                 hLineYs.push(blockPlotY + fontSize + padding);
             }
 
-            keyData.linesBySection.forEach(function(section, sectionI, array) {
+            legendData.linesBySection.forEach(function(section, sectionI, array) {
                 var prevItemLen = sectionI ?
                     array[sectionI - 1].length :
                     0;
 
                 section.forEach(function(line, lineI) {
-                    blockPlotY = legendPlotY + padding + ((prevItemLen + lineI) * lineSpacing) + (sectionI ? padding * 2 : 0) + (keyData.title ? (padding * 2) + fontSize : 0);
+                    blockPlotY = legendPlotY + padding + ((prevItemLen + lineI) * lineSpacing) + (sectionI ? padding * 2 : 0) + (legendData.title ? (padding * 2) + fontSize : 0);
 
                     // Draw text
                     var text = line.text;
@@ -205,10 +205,10 @@
             /*
              * Draw title
              */
-            if (keyData.title) {
+            if (legendData.title) {
                 blockPlotY = legendPlotY + padding;
 
-                var text = keyData.title;
+                var text = legendData.title;
                 ctx.textAlign = "center";
                 ctx.fillText(text,
                              left + ((padding + (1.5 * fontSize) + maxTextWidth + padding) / 2),
