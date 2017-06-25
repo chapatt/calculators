@@ -40,8 +40,8 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         function plot(fns, cursorX) {
-            var canvas = document.getElementById("chart");
-            var ctx = canvas.getContext("2d");
+            var canvas = document.getElementById('chart');
+            var ctx = canvas.getContext('2d');
             var chartProperties = {};
 
             chartProperties.marginTop = 50;
@@ -105,9 +105,11 @@
             chartProperties.fontSize = getEmPixels();
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgb(255, 255, 255)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             plotAxes(ctx, chartProperties, 'Fraction of Full Rotation', 'Resistance');
             plotFns(ctx, chartProperties, fns);
-            var cursorLegend = plotCursor(ctx, chartProperties, fns, cursorX, 0 + 1);
+            var cursorLegend = plotCursor(ctx, chartProperties, fns, cursorX, chartProperties.fontSize);
             plotKey(ctx, chartProperties, fns, cursorLegend[3][1] + chartProperties.fontSize);
         }
 
@@ -745,10 +747,6 @@
     body {
       font-size: 1em;
       font-family: sans-serif;
-    }
-
-    #chart {
-        background-color: #ffffff;
     }
 
     label {
