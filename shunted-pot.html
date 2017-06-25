@@ -113,7 +113,7 @@
 
         function plotKey(ctx, chartProperties, fns, legendPlotY) {
             var keyData = {
-                title: 'x = 50%',
+                title: 'Key',
                 linesBySection: []
             };
 
@@ -159,17 +159,31 @@
             ctx.textBaseline = 'top';
             ctx.lineWidth = chartProperties.graphLineWidth;
             var maxTextWidth = 0;
+            var blockPlotY;
 
             var hLineYs = [legendPlotY];
+
+            /*
+             * Register title block bottom secretary
+             */
+            if (keyData.title) {
+                blockPlotY = legendPlotY + padding;
+
+                var textWidth = ctx.measureText(text).width;
+                if (textWidth > maxTextWidth) {
+                    maxTextWidth = textWidth;
+                }
+
+                hLineYs.push(blockPlotY + fontSize + padding);
+            }
 
             keyData.linesBySection.forEach(function(section, sectionI, array) {
                 var prevItemLen = sectionI ?
                     array[sectionI - 1].length :
                     0;
-                var blockPlotY;
 
                 section.forEach(function(line, lineI) {
-                    blockPlotY = legendPlotY + padding + ((prevItemLen + lineI) * lineSpacing) + (sectionI ? padding * 2 : 0);
+                    blockPlotY = legendPlotY + padding + ((prevItemLen + lineI) * lineSpacing) + (sectionI ? padding * 2 : 0) + (keyData.title ? (padding * 2) + fontSize : 0);
 
                     // Draw text
                     var text = line.text;
@@ -187,6 +201,20 @@
 
                 hLineYs.push(blockPlotY + fontSize + padding);
             });
+
+            /*
+             * Draw title
+             */
+            if (keyData.title) {
+                blockPlotY = legendPlotY + padding;
+
+                var text = keyData.title;
+                ctx.textAlign = "center";
+                ctx.fillText(text,
+                             left + ((padding + (1.5 * fontSize) + maxTextWidth + padding) / 2),
+                             blockPlotY
+                );
+            }
 
             /* box corner coordinates top-left, top-right, bottom-right, bottom-left */
             var boxCoords = [];
