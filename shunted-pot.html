@@ -250,26 +250,20 @@
             ctx.strokeStyle = 'rgb(0, 0, 0)'; 
             ctx.lineWidth = 2;
 
-            // draw x axis
-                       // miter properly with other axis
-            ctx.moveTo(chartProperties.plotX0 - (ctx.lineWidth),
-                       // completely outside chart
-                       chartProperties.plotY0 + (ctx.lineWidth / 2));
+            // draw axes
                        // miter properly with cursor
-            ctx.lineTo(chartProperties.plotXMax + (chartProperties.cursorLineWidth / 2),
+            ctx.moveTo(chartProperties.plotXMax + (chartProperties.cursorLineWidth / 2),
                        // completely outside chart
                        chartProperties.plotY0 + (ctx.lineWidth / 2));
-            ctx.stroke();
-
-            // draw y axis
                        // completely outside chart
-            ctx.moveTo(chartProperties.plotX0 - (ctx.lineWidth / 2),
+            ctx.lineTo(chartProperties.plotX0 - (ctx.lineWidth / 2),
                        // miter properly with other axis
-                       chartProperties.plotY0 + (ctx.lineWidth));
+                       chartProperties.plotY0 + (ctx.lineWidth / 2));
                        // completely outside chart
             ctx.lineTo(chartProperties.plotX0 - (ctx.lineWidth / 2),
                        // miter properly with cursor
                        chartProperties.plotYMax - (chartProperties.cursorLineWidth / 2));
+
             ctx.stroke();
 
             var fontSize = chartProperties.fontSize;
