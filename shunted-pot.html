@@ -107,21 +107,21 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             plotAxes(ctx, chartProperties, 'Fraction of Full Rotation', 'Resistance');
             plotFns(ctx, chartProperties, fns);
-            plotCursor(ctx, chartProperties, fns, cursorX, chartProperties.marginTop);
-            plotKey(ctx, chartProperties, fns, chartProperties.marginTop + (chartProperties.h / 2));
+            var cursorLegend = plotCursor(ctx, chartProperties, fns, cursorX, 0 + 1);
+            plotKey(ctx, chartProperties, fns, cursorLegend[3][1] + chartProperties.fontSize);
         }
 
         function plotKey(ctx, chartProperties, fns, legendPlotY) {
             var legendData = {
-                title: 'Key',
                 linesBySection: []
             };
 
-            function drawLineSymbol(color, dash, ctx, chartProperties, x, y) {
+            function drawLineSymbol(color, dash, lineWidth, ctx, chartProperties, x, y) {
                 ctx.beginPath();
                 ctx.moveTo(x - (chartProperties.fontSize / 2), y);
                 ctx.lineTo(x + (chartProperties.fontSize / 2), y);
                 ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
                 ctx.setLineDash(dash);
                 ctx.stroke();
             }
@@ -134,7 +134,8 @@
 
                     var color = fns[fnsIndex].color; 
                     var dash = fns[fnsIndex].dash;
-                    var symbolDrawingFn = drawLineSymbol.bind(null, color, dash);
+                    var lineWidth = fns[fnsIndex].lineWidth;
+                    var symbolDrawingFn = drawLineSymbol.bind(null, color, dash, lineWidth);
 
                     legendData.linesBySection[yScaleI].push({
                         symbolDrawingFn: symbolDrawingFn, text: text
@@ -142,7 +143,7 @@
                 });
             });
 
-            plotLegend(ctx, chartProperties, legendPlotY, legendData);
+            return plotLegend(ctx, chartProperties, legendPlotY, legendData);
         }
 
         function plotLegend(ctx, chartProperties, legendPlotY, legendData) {
@@ -187,6 +188,7 @@
 
                     // Draw text
                     var text = line.text;
+                    ctx.fillStyle = 'rgb(0, 0, 0)';
                     ctx.fillText(text, left + padding + (1.5 * fontSize), blockPlotY);
                     var textWidth = ctx.measureText(text).width;
                     if (textWidth > maxTextWidth) {
@@ -210,6 +212,7 @@
 
                 var text = legendData.title;
                 ctx.textAlign = "center";
+                ctx.fillStyle = 'rgb(0, 0, 0)';
                 ctx.fillText(text,
                              left + ((padding + (1.5 * fontSize) + maxTextWidth + padding) / 2),
                              blockPlotY
@@ -301,36 +304,47 @@
             var lineSpacing = fontSize;
             var left = chartProperties.plotXMax + 10;
 
-            // draw legend title
-            ctx.font = fontSize.toString() + 'px sans-serif';
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
-            ctx.fillStyle = 'rgb(0, 0, 0)';
-            ctx.fillText('x = ' + Math.round(cursorX * 100) + '%', left, legendPlotY);
+            // draw legend
+            var legendData = {
+                title: 'x = ' + Math.round(cursorX * 100) + '%',
+                linesBySection: []
+            };
 
-            // draw legend entries
-            fns.forEach(function(item, index) {
+            function drawPointSymbol(color, fill, dash, lineWidth, ctx, chartProperties, x, y) {
                 ctx.beginPath();
-                ctx.arc(left + cursorPointRadius, legendPlotY + (lineSpacing * (index + 1)) + (fontSize / 2), cursorPointRadius, 0, 2 * Math.PI, false);
-                ctx.fillStyle = fns[index].pointFill;
+                ctx.arc(x, y, cursorPointRadius, 0, 2 * Math.PI, false);
+                ctx.fillStyle = fill;
                 ctx.fill();
-                ctx.strokeStyle = fns[index].color; 
-                ctx.setLineDash(fns[index].pointDash);
+                ctx.strokeStyle = color; 
+                ctx.setLineDash(dash);
                 ctx.stroke();
+            }
 
-                ctx.fillStyle = 'rgb(0, 0, 0)';
-                ctx.fillText(
-                    roundToDecimalPlaces(item.unit.convTo(item.fn(cursorX)), 1) +
-                    ' ' + item.unit.symbol +
-                    (item.plotCursorPercentage != false ?
-                        ' (' + Math.round(item.fn(cursorX) / chartProperties.fnsMax[index] * 100) + '%)' :
-                        ''),
-                    left + (cursorPointRadius * 2) + (fontSize / 2),
-                    legendPlotY + (lineSpacing * (index + 1))
-                );
+            chartProperties.fnsIndicesByPlotYScale.forEach(function(item, yScaleI, array) {
+                legendData.linesBySection.push([]);
+
+                item.forEach(function(fnsIndex, fnI) {
+                    var text = roundToDecimalPlaces(fns[fnsIndex].unit.convTo(fns[fnsIndex].fn(cursorX)), 1) + ' ' + fns[fnsIndex].unit.symbol +
+                        (fns[fnsIndex].plotCursorPercentage != false ?
+                            ' (' + Math.round(fns[fnsIndex].fn(cursorX) / chartProperties.fnsMax[fnsIndex] * 100) + '%)' :
+                            '')
+
+                    var color = fns[fnsIndex].color;
+                    var fill = fns[fnsIndex].pointFill;
+                    var dash = fns[fnsIndex].pointDash;
+                    var lineWidth = fns[fnsIndex].lineWidth;
+                    var symbolDrawingFn = drawPointSymbol.bind(null, color, fill, dash, lineWidth);
+
+                    legendData.linesBySection[yScaleI].push({
+                        symbolDrawingFn: symbolDrawingFn, text: text
+                    });
+                });
+
             });
 
             ctx.restore();
+
+            return plotLegend(ctx, chartProperties, legendPlotY, legendData);
         }
 
         function plotFns(ctx, chartProperties, fns) {
