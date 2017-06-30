@@ -436,11 +436,66 @@
             var plotError = (args && ('plotError' in args)) ?
                 args.plotError :
                 toggleButtonPlotError.getValueModel().getValue();
+            var constrainVOut = (args && ('constrainVOut' in args)) ?
+                args.constrainVOut :
+                toggleButtonConstrainVOut.getValueModel().getValue();
 
             var rModel = spinBoxRTaper1.getValueModel();
             var rUnit = rModel.getUnitTable()[rModel.getUnitIndex()];
             var fracModel = sliderRRefTaper.getValueModel();
             var fracUnit = fracModel.getUnitTable()[fracModel.getUnitIndex()];
+
+            /*
+            solve for whichever variable you want to generate vOut = (1 / ((1 / rTaper1) + (1 / (rPot / 2)))) / ((1 / ((1 / rTaper1) + (1 / (rPot / 2)))) + (1 / ((1 / rTaper2) + (1 / (rPot / 2)))))
+            */
+            var callbackObj;
+            if (constrainVOut === 'selected') {
+                if (rRefTaper < 0.5) {
+                    rTaper1 = Infinity;
+                    callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
+                    spinBoxRTaper1.getValueModel().setValue(rTaper1);
+                    spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+
+                    if (args && 'rTaper2' in args) {
+                        rPot = ((2 - (4 * rRefTaper)) * rTaper2) / rRefTaper;
+                        callbackObj = spinBoxRPot.getValueModel().signalDisconnect('valueChanged', rPotCallback);
+                        spinBoxRPot.getValueModel().setValue(rPot);
+                        spinBoxRPot.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                    } else {
+                        rTaper2 = (rRefTaper * rPot) / (2 - (4 * rRefTaper));
+                        callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
+                        spinBoxRTaper2.getValueModel().setValue(rTaper2);
+                        spinBoxRTaper2.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                    }
+                } else if (rRefTaper > 0.5) {
+                    rTaper2 = Infinity;
+                    callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
+                    spinBoxRTaper2.getValueModel().setValue(rTaper2);
+                    spinBoxRTaper2.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+
+                    if (args && 'rTaper1' in args) {
+                        rPot = ((2 - (4 * rRefTaper)) * rTaper1) / (rRefTaper - 1);
+                        callbackObj = spinBoxRPot.getValueModel().signalDisconnect('valueChanged', rPotCallback);
+                        spinBoxRPot.getValueModel().setValue(rPot);
+                        spinBoxRPot.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                    } else {
+                        rTaper1 = (rPot - (rRefTaper * rPot)) / ((4 * rRefTaper) - 2);
+                        callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
+                        spinBoxRTaper1.getValueModel().setValue(rTaper1);
+                        spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                    }
+                } else if (rRefTaper = 0.5) {
+                    rTaper1 = Infinity;
+                    callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
+                    spinBoxRTaper1.getValueModel().setValue(rTaper1);
+                    spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+
+                    rTaper2 = Infinity;
+                    callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
+                    spinBoxRTaper2.getValueModel().setValue(rTaper2);
+                    spinBoxRTaper2.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                }
+            }
 
             var fns = [
                 {
@@ -654,14 +709,10 @@
         Object.assign(spinBoxRPot.getValueModel(), chapatt.Bounded);
         spinBoxRPot.getValueModel().setMinimum(0);
         spinBoxRPot.getValueModel().setMaximum(Infinity);
-        spinBoxRPot.getValueModel().signalConnect('valueChanged', function(targetWidget, signalName, signalData, userData) {
-/*
-            var rRefTaper = sliderRRefTaper.getValueModel().getValue();
-            var newRTaper1 = (signalData - (signalData * rRefTaper)) / ((2 * rRefTaper) - 1)
-            spinBoxRTaper1.getValueModel().setValue(newRTaper1);
-*/
+        function rPotCallback(targetWidget, signalName, signalData, userData) {
             plotAuto({rPot: signalData});
-        });
+        }
+        spinBoxRPot.getValueModel().signalConnect('valueChanged', rPotCallback);
 
         /*
          * Rtaper1 SpinBox
@@ -670,14 +721,10 @@
         Object.assign(spinBoxRTaper1.getValueModel(), chapatt.Bounded);
         spinBoxRTaper1.getValueModel().setMinimum(0);
         spinBoxRTaper1.getValueModel().setMaximum(Infinity);
-        spinBoxRTaper1.getValueModel().signalConnect('valueChanged', function(targetWidget, signalName, signalData, userData) {
-/*
-            var rRefTaper = sliderRRefTaper.getValueModel().getValue();
-            var newRPot = (signalData - (2 * signalData * rRefTaper)) / (rRefTaper - 1);
-            spinBoxRPot.getValueModel().setValue(newRPot);
-*/
-                plotAuto({rTaper1: signalData});
-        });
+        function rTaper1Callback(targetWidget, signalName, signalData, userData) {
+            plotAuto({rTaper1: signalData});
+        }
+        spinBoxRTaper1.getValueModel().signalConnect('valueChanged', rTaper1Callback);
 
         /*
          * Rtaper2 SpinBox
@@ -686,16 +733,17 @@
         Object.assign(spinBoxRTaper2.getValueModel(), chapatt.Bounded);
         spinBoxRTaper2.getValueModel().setMinimum(0);
         spinBoxRTaper2.getValueModel().setMaximum(Infinity);
-        spinBoxRTaper2.getValueModel().signalConnect('valueChanged', function(targetWidget, signalName, signalData, userData) {
+        function rTaper2Callback(targetWidget, signalName, signalData, userData) {
                 plotAuto({rTaper2: signalData});
-        });
+        }
+        spinBoxRTaper2.getValueModel().signalConnect('valueChanged', rTaper2Callback);
 
         /*
          * Constrain Taper ToggleButton
          */
-        var toggleButtonConstrainTaper = chapatt.ToggleButton.new(document.getElementById('toggle-button-constrain-taper'));
-        toggleButtonConstrainTaper.getValueModel().signalConnect('valueChanged', function(targetWidget, signalName, signalData, userData) {
-                plotAuto({constrainTaper: signalData});
+        var toggleButtonConstrainVOut = chapatt.ToggleButton.new(document.getElementById('toggle-button-constrain-vout'));
+        toggleButtonConstrainVOut.getValueModel().signalConnect('valueChanged', function(targetWidget, signalName, signalData, userData) {
+                plotAuto({constrainVOut: signalData});
             }
         );
 
@@ -884,8 +932,8 @@
   </div>
   </label>
 
-  <div id="toggle-button-constrain-taper" class="example-widget example-button example-toggle-button">
-    <span>Constrain to R<sub>ref</sub> Taper</span>
+  <div id="toggle-button-constrain-vout" class="example-widget example-button example-toggle-button">
+    <span>Constrain V<sub>out</sub> to R<sub>ref</sub> Taper</span>
   </div>
   </div>
 
