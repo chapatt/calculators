@@ -161,20 +161,21 @@
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
             ctx.lineWidth = chartProperties.graphLineWidth;
-            var maxTextWidth = 0;
+            var maxLineWidth = 0;
             var blockPlotY;
 
             var hLineYs = [legendPlotY];
 
             /*
-             * Register title block bottom secretary
+             * Register title block bottom border
              */
             if (legendData.title) {
                 blockPlotY = legendPlotY + padding;
 
+                var text = legendData.title;
                 var textWidth = ctx.measureText(text).width;
-                if (textWidth > maxTextWidth) {
-                    maxTextWidth = textWidth;
+                if (textWidth > maxLineWidth) {
+                    maxLineWidth = textWidth;
                 }
 
                 hLineYs.push(blockPlotY + fontSize + padding);
@@ -193,8 +194,8 @@
                     ctx.fillStyle = 'rgb(0, 0, 0)';
                     ctx.fillText(text, left + padding + (1.5 * fontSize), blockPlotY);
                     var textWidth = ctx.measureText(text).width;
-                    if (textWidth > maxTextWidth) {
-                        maxTextWidth = textWidth;
+                    if ((lineWidth = textWidth + (fontSize * 1.5)) > maxLineWidth) {
+                        maxLineWidth = lineWidth;
                     }
 
                     // Draw symbol
@@ -216,7 +217,7 @@
                 ctx.textAlign = "center";
                 ctx.fillStyle = 'rgb(0, 0, 0)';
                 ctx.fillText(text,
-                             left + ((padding + (1.5 * fontSize) + maxTextWidth + padding) / 2),
+                             left + ((padding + maxLineWidth + padding) / 2),
                              blockPlotY
                 );
             }
@@ -224,8 +225,8 @@
             /* box corner coordinates top-left, top-right, bottom-right, bottom-left */
             var boxCoords = [];
             boxCoords.push([left, hLineYs[0]]);
-            boxCoords.push([left + padding + (1.5 * fontSize) + maxTextWidth + padding, hLineYs[0]]);
-            boxCoords.push([left + padding + (1.5 * fontSize) + maxTextWidth + padding, hLineYs[hLineYs.length - 1]]);
+            boxCoords.push([left + padding + maxLineWidth + padding, hLineYs[0]]);
+            boxCoords.push([left + padding + maxLineWidth + padding, hLineYs[hLineYs.length - 1]]);
             boxCoords.push([left, hLineYs[hLineYs.length - 1]]);
 
             /* Draw box */
@@ -245,7 +246,7 @@
             for (var i=1; i < hLineYs.length - 1; ++i) {
                 ctx.beginPath();
                 ctx.moveTo(left, hLineYs[i]);
-                ctx.lineTo(left + padding + (1.5 * fontSize) + maxTextWidth + padding, hLineYs[i]);
+                ctx.lineTo(left + padding + maxLineWidth + padding, hLineYs[i]);
                 ctx.strokeStyle = 'rgb(0, 0, 0)'; 
                 ctx.setLineDash([0, 0]);
                 ctx.stroke();
