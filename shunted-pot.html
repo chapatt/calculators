@@ -444,6 +444,9 @@
             var constrainVOut = (args && ('constrainVOut' in args)) ?
                 args.constrainVOut :
                 toggleButtonConstrainVOut.getValueModel().getValue();
+            var plotFunctions = (args && ('plotFunctions' in args)) ?
+                args.plotFunctions :
+                toggleButtonGroupPlotFunctions.getValueModel().getValue();
             var rRefCurve = (((args && ('rRefCurve' in args)) ?
                 args.rRefCurve :
                 toggleButtonRRefCurve.getValueModel().getValue()) === 'selected') ?
@@ -508,8 +511,9 @@
                 }
             }
 
-            var fns = [
-                {
+            var fns = [];
+            if (plotFunctions[1] === 'selected') {
+                fns.push({
                     fn: referenceTaperRout.bind(null, rRef, rRefTaper, rRefCurve),
                     name: 'Reference Rout',
                     color: 'rgb(0, 255, 0)',
@@ -521,35 +525,25 @@
                     unit: rUnit
                 },
                 {
-                    fn: referenceTaperRin.bind(null, rRef),
-                    name: 'Reference Rin',
-                    color: 'rgb(0, 255, 0)',
-                    pointFill: 'rgb(255, 255, 255)',
-                    dash: [2, 2],
-                    pointDash: [3, 3],
-                    lineWidth: 2,
-                    yScale: 'scale0',
-                    unit: rUnit
-                },
-                {
-                    fn: referenceTaperVout.bind(null, rRef, rRefTaper, rRefCurve),
-                    name: 'Reference Vout',
-                    color: 'rgb(0, 255, 0)',
-                    pointFill: 'rgb(0, 255, 0)',
-                    dash: [],
-                    pointDash: [],
-                    lineWidth: 2,
-                    yScale: 'scale1',
-                    unit: fracUnit,
-                    plotCursorPercentage: false
-                },
-                {
                     fn: myTaperRout.bind(null, rPot, rTaper1, rTaper2),
                     name: 'Shunted Rout',
                     color: 'rgb(0, 0, 255)',
                     pointFill: 'rgb(255, 255, 255)',
                     dash: [5, 5],
                     pointDash: [],
+                    lineWidth: 2,
+                    yScale: 'scale0',
+                    unit: rUnit
+                });
+            }
+            if (plotFunctions[2] === 'selected') {
+                fns.push({
+                    fn: referenceTaperRin.bind(null, rRef),
+                    name: 'Reference Rin',
+                    color: 'rgb(0, 255, 0)',
+                    pointFill: 'rgb(255, 255, 255)',
+                    dash: [2, 2],
+                    pointDash: [3, 3],
                     lineWidth: 2,
                     yScale: 'scale0',
                     unit: rUnit
@@ -564,6 +558,20 @@
                     lineWidth: 2,
                     yScale: 'scale0',
                     unit: rUnit
+                });
+            }
+            if (plotFunctions[0] === 'selected') {
+                fns.push({
+                    fn: referenceTaperVout.bind(null, rRef, rRefTaper, rRefCurve),
+                    name: 'Reference Vout',
+                    color: 'rgb(0, 255, 0)',
+                    pointFill: 'rgb(0, 255, 0)',
+                    dash: [],
+                    pointDash: [],
+                    lineWidth: 2,
+                    yScale: 'scale1',
+                    unit: fracUnit,
+                    plotCursorPercentage: false
                 },
                 {
                     fn: myTaperVout.bind(null, rPot, rTaper1, rTaper2),
@@ -576,61 +584,67 @@
                     yScale: 'scale1',
                     unit: fracUnit,
                     plotCursorPercentage: false
-                }
-            ]
+                });
+            }
 
             if (plotError == 'selected') {
-                fns.push({
-                    // Magnitude of error between Routs
-                    fn: function(x) {
-                        var mine = myTaperRout(rPot, rTaper1, rTaper2, x);
-                        var ref = referenceTaperRout(rRef, rRefTaper, rRefCurve, x);
-                        return Math.abs(mine - ref);
-                    },
-                    name: 'Rout Error',
-                    color: 'rgb(255, 0, 0)',
-                    pointFill: 'rgb(255, 255, 255)',
-                    dash: [5, 5],
-                    pointDash: [],
-                    lineWidth: 2,
-                    yScale: 'scale0',
-                    unit: rUnit,
-                    plotCursorPercentage: false
-                });
-                fns.push({
-                    // Magnitude of error between Rins
-                    fn: function(x) {
-                        var mine = myTaperRin(rPot, rTaper1, rTaper2, x);
-                        var ref = referenceTaperRin(rRef, x);
-                        return Math.abs(mine - ref);
-                    },
-                    name: 'Rin Error',
-                    color: 'rgb(255, 0, 0)',
-                    pointFill: 'rgb(255, 255, 255)',
-                    dash: [2, 2],
-                    pointDash: [3, 3],
-                    lineWidth: 2,
-                    yScale: 'scale0',
-                    unit: rUnit,
-                    plotCursorPercentage: false
-                });
-                fns.push({
-                    // Magnitude of error between Vouts
-                    fn: function(x) {
-                        var mine = myTaperVout(rPot, rTaper1, rTaper2, x);
-                        var ref = referenceTaperVout(rRef, rRefTaper, rRefCurve, x);
-                        return Math.abs(mine - ref);
-                    },
-                    name: 'Vout Error',
-                    color: 'rgb(255, 0, 0)',
-                    pointFill: 'rgb(255, 0, 0)',
-                    dash: [],
-                    pointDash: [],
-                    lineWidth: 2,
-                    yScale: 'scale1',
-                    unit: fracUnit,
-                    plotCursorPercentage: false
-                });
+                if (plotFunctions[1] === 'selected') {
+                    fns.push({
+                        // Magnitude of error between Routs
+                        fn: function(x) {
+                            var mine = myTaperRout(rPot, rTaper1, rTaper2, x);
+                            var ref = referenceTaperRout(rRef, rRefTaper, rRefCurve, x);
+                            return Math.abs(mine - ref);
+                        },
+                        name: 'Rout Error',
+                        color: 'rgb(255, 0, 0)',
+                        pointFill: 'rgb(255, 255, 255)',
+                        dash: [5, 5],
+                        pointDash: [],
+                        lineWidth: 2,
+                        yScale: 'scale0',
+                        unit: rUnit,
+                        plotCursorPercentage: false
+                    });
+                }
+                if (plotFunctions[2] === 'selected') {
+                    fns.push({
+                        // Magnitude of error between Rins
+                        fn: function(x) {
+                            var mine = myTaperRin(rPot, rTaper1, rTaper2, x);
+                            var ref = referenceTaperRin(rRef, x);
+                            return Math.abs(mine - ref);
+                        },
+                        name: 'Rin Error',
+                        color: 'rgb(255, 0, 0)',
+                        pointFill: 'rgb(255, 255, 255)',
+                        dash: [2, 2],
+                        pointDash: [3, 3],
+                        lineWidth: 2,
+                        yScale: 'scale0',
+                        unit: rUnit,
+                        plotCursorPercentage: false
+                    });
+                }
+                if (plotFunctions[0] === 'selected') {
+                    fns.push({
+                        // Magnitude of error between Vouts
+                        fn: function(x) {
+                            var mine = myTaperVout(rPot, rTaper1, rTaper2, x);
+                            var ref = referenceTaperVout(rRef, rRefTaper, rRefCurve, x);
+                            return Math.abs(mine - ref);
+                        },
+                        name: 'Vout Error',
+                        color: 'rgb(255, 0, 0)',
+                        pointFill: 'rgb(255, 0, 0)',
+                        dash: [],
+                        pointDash: [],
+                        lineWidth: 2,
+                        yScale: 'scale1',
+                        unit: fracUnit,
+                        plotCursorPercentage: false
+                    });
+                }
             }
 
             plot(fns, cursorX);
@@ -657,6 +671,17 @@
             function(targetWidget, signalName, signalData, userData) {
                 if (signalData == 'selected')
                     plotShuntedPot();
+            }
+        );
+
+        /*
+         * Plot Functions ToggleButtonGroup
+         */
+
+        var toggleButtonGroupPlotFunctions = chapatt.ToggleButtonGroup.new(document.getElementById('toggle-button-group-plot-functions'));
+        toggleButtonGroupPlotFunctions.getValueModel().signalConnect('valueChanged',
+            function(targetWidget, signalName, signalData, userData) {
+                plotShuntedPot({plotFunctions: signalData});
             }
         );
 
@@ -883,6 +908,18 @@
   <div id="toggle-button-auto-replot" class="example-widget example-button example-toggle-button selected">
     <span>Auto-Replot</span>
   </div>
+
+  <ul id="toggle-button-group-plot-functions" class="example-widget example-button-group">
+      <li class="example-button example-toggle-button button">
+          <div>V<sub>out</sub></div>
+      </li>
+      <li class="example-button example-toggle-button button">
+          <div>R<sub>out</sub></div>
+      </li>
+      <li class="example-button example-toggle-button button">
+          <div>R<sub>in</sub></div>
+      </li>
+  </ul>
 
   <div id="toggle-button-plot-error" class="example-widget example-button example-toggle-button selected">
     <span>Plot Error</span>
