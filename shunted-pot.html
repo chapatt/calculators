@@ -160,6 +160,13 @@
             var left = chartProperties.plotXMax + 10;
             var padding = fontSize / 2;
 
+            if (legendData.linesBySection.length === 0) {
+                var boxCoords = [];
+                for (var i=0; i < 4; ++i)
+                    boxCoords.push([chartProperties.plotXMax + 10, legendPlotY]);
+                return boxCoords;
+            }
+
             ctx.font = fontSize.toString() + 'px sans-serif';
             ctx.fillStyle = 'rgb(0, 0, 0)';
             ctx.textAlign = 'left';
@@ -910,13 +917,13 @@
   </div>
 
   <ul id="toggle-button-group-plot-functions" class="example-widget example-button-group">
-      <li class="example-button example-toggle-button button">
+      <li class="example-button example-toggle-button button selected">
           <div>V<sub>out</sub></div>
       </li>
-      <li class="example-button example-toggle-button button">
+      <li class="example-button example-toggle-button button selected">
           <div>R<sub>out</sub></div>
       </li>
-      <li class="example-button example-toggle-button button">
+      <li class="example-button example-toggle-button button selected">
           <div>R<sub>in</sub></div>
       </li>
   </ul>
