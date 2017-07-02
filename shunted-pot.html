@@ -10,20 +10,24 @@
   <script type="text/javascript" src="getEmPixels/getEmPixels.min.js"></script>
 
   <script type="text/javascript">
-    function referenceTaperRout(rRef, rRefTaper, x) {
-        if (x < 0.5)
-            return rRef * ((rRefTaper / 0.5) * x);
-        else
-            return rRef * ((((1 - rRefTaper) / 0.5) * x) + (rRefTaper - (1 - rRefTaper)));
+    function referenceTaperRout(rRef, rRefTaper, rRefCurve, x) {
+        if (rRefCurve) {
+            var r = (Math.pow(rRefTaper, 2) - (2 * rRefTaper) + 1) / Math.pow(rRefTaper, 2);
+            return (rRef / (r - 1)) * (Math.pow(r, x)) - (rRef / (r - 1));
+        } else {
+            if (x < 0.5)
+                return rRef * ((rRefTaper / 0.5) * x);
+            else
+                return rRef * ((((1 - rRefTaper) / 0.5) * x) + (rRefTaper - (1 - rRefTaper)));
+        }
     }
     function referenceTaperRin(rRef, x) {
         return rRef;
     }
-    function referenceTaperVout(rRef, rRefTaper, x) {
-        if (x < 0.5)
-            return ((1 - rRefTaper) / 0.5) * x;
-        else
-            return ((rRefTaper / 0.5) * x) + ((1 - rRefTaper) - rRefTaper);
+    function referenceTaperVout(rRef, rRefTaper, rRefCurve, x) {
+        var rout = referenceTaperRout(rRef, rRefTaper, rRefCurve, x);
+        var rin = rRef;
+        return rout / rin;
     }
     function myTaperRout(rPot, rTaper1, rTaper2, x) {
         return 1 / ((1 / (rPot * x)) + (1 / rTaper1));
@@ -440,6 +444,11 @@
             var constrainVOut = (args && ('constrainVOut' in args)) ?
                 args.constrainVOut :
                 toggleButtonConstrainVOut.getValueModel().getValue();
+            var rRefCurve = (((args && ('rRefCurve' in args)) ?
+                args.rRefCurve :
+                toggleButtonRRefCurve.getValueModel().getValue()) === 'selected') ?
+                    true :
+                    false;
 
             var rModel = spinBoxRTaper1.getValueModel();
             var rUnit = rModel.getUnitTable()[rModel.getUnitIndex()];
@@ -500,7 +509,7 @@
 
             var fns = [
                 {
-                    fn: referenceTaperRout.bind(null, rRef, rRefTaper),
+                    fn: referenceTaperRout.bind(null, rRef, rRefTaper, rRefCurve),
                     name: 'Reference Rout',
                     color: 'rgb(0, 255, 0)',
                     pointFill: 'rgb(255, 255, 255)',
@@ -522,7 +531,7 @@
                     unit: rUnit
                 },
                 {
-                    fn: referenceTaperVout.bind(null, rRef, rRefTaper),
+                    fn: referenceTaperVout.bind(null, rRef, rRefTaper, rRefCurve),
                     name: 'Reference Vout',
                     color: 'rgb(0, 255, 0)',
                     pointFill: 'rgb(0, 255, 0)',
@@ -574,7 +583,7 @@
                     // Magnitude of error between Routs
                     fn: function(x) {
                         var mine = myTaperRout(rPot, rTaper1, rTaper2, x);
-                        var ref = referenceTaperRout(rRef, rRefTaper, x);
+                        var ref = referenceTaperRout(rRef, rRefTaper, rRefCurve, x);
                         return Math.abs(mine - ref);
                     },
                     name: 'Rout Error',
@@ -608,7 +617,7 @@
                     // Magnitude of error between Vouts
                     fn: function(x) {
                         var mine = myTaperVout(rPot, rTaper1, rTaper2, x);
-                        var ref = referenceTaperVout(rRef, rRefTaper, x);
+                        var ref = referenceTaperVout(rRef, rRefTaper, rRefCurve, x);
                         return Math.abs(mine - ref);
                     },
                     name: 'Vout Error',
@@ -766,6 +775,16 @@
         sliderRRefTaper.getValueModel().signalConnect('valueChanged', function(targetWidget, signalName, signalData, userData) {
             plotAuto({rRefTaper: signalData});
         });
+
+        /*
+         * Rref curve fitting ToggleButton
+         */
+        var toggleButtonRRefCurve = chapatt.ToggleButton.new(document.getElementById('toggle-button-rref-curve'));
+        toggleButtonRRefCurve.getValueModel().signalConnect('valueChanged',
+            function(targetWidget, signalName, signalData, userData) {
+                plotAuto({rRefCurve: signalData});
+            }
+        );
 
         /*
          * Instructions help box
@@ -972,6 +991,10 @@
     </div>
   </div>
   </label>
+
+  <div id="toggle-button-rref-curve" class="example-widget example-button example-toggle-button selected">
+    <span>Fit Curve</span>
+  </div>
   </div>
 
   <ol id="bibliography">
