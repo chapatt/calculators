@@ -456,40 +456,41 @@
             var fracUnit = fracModel.getUnitTable()[fracModel.getUnitIndex()];
 
             /*
-            solve for whichever variable you want to generate vOut = (1 / ((1 / rTaper1) + (1 / (rPot / 2)))) / ((1 / ((1 / rTaper1) + (1 / (rPot / 2)))) + (1 / ((1 / rTaper2) + (1 / (rPot / 2)))))
+             * solve for whichever variable you want to generate
+             * vOut = (1 / ((1 / rTaper1) + (1 / (rPot / 2)))) / ((1 / ((1 / rTaper1) + (1 / (rPot / 2)))) + (1 / ((1 / rTaper2) + (1 / (rPot / 2)))))
             */
             var callbackObj;
             if (constrainVOut === 'selected') {
-                if (rRefTaper < 0.5) {
+                if (rRefTaper > 0.5) {
                     rTaper1 = Infinity;
                     callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
                     spinBoxRTaper1.getValueModel().setValue(rTaper1);
                     spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
 
                     if (args && 'rTaper2' in args) {
-                        rPot = ((2 - (4 * rRefTaper)) * rTaper2) / rRefTaper;
+                        rPot = ((2 - (4 * rRefTaper)) * rTaper2) / (rRefTaper - 1);
                         callbackObj = spinBoxRPot.getValueModel().signalDisconnect('valueChanged', rPotCallback);
                         spinBoxRPot.getValueModel().setValue(rPot);
                         spinBoxRPot.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
                     } else {
-                        rTaper2 = (rRefTaper * rPot) / (2 - (4 * rRefTaper));
+                        rTaper2 = (rPot - (rRefTaper * rPot)) / ((4 * rRefTaper) - 2);
                         callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
                         spinBoxRTaper2.getValueModel().setValue(rTaper2);
                         spinBoxRTaper2.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
                     }
-                } else if (rRefTaper > 0.5) {
+                } else if (rRefTaper < 0.5) {
                     rTaper2 = Infinity;
                     callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
                     spinBoxRTaper2.getValueModel().setValue(rTaper2);
                     spinBoxRTaper2.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
 
                     if (args && 'rTaper1' in args) {
-                        rPot = ((2 - (4 * rRefTaper)) * rTaper1) / (rRefTaper - 1);
+                        rPot = ((2 - (4 * rRefTaper)) * rTaper1) / rRefTaper;
                         callbackObj = spinBoxRPot.getValueModel().signalDisconnect('valueChanged', rPotCallback);
                         spinBoxRPot.getValueModel().setValue(rPot);
                         spinBoxRPot.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
                     } else {
-                        rTaper1 = (rPot - (rRefTaper * rPot)) / ((4 * rRefTaper) - 2);
+                        rTaper1 = (rRefTaper * rPot) / (2 - (4 * rRefTaper));
                         callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
                         spinBoxRTaper1.getValueModel().setValue(rTaper1);
                         spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
