@@ -448,9 +448,9 @@
             var plotError = (args && ('plotError' in args)) ?
                 args.plotError :
                 toggleButtonPlotError.getValueModel().getValue();
-            var constrainVOut = (args && ('constrainVOut' in args)) ?
-                args.constrainVOut :
-                toggleButtonConstrainVOut.getValueModel().getValue();
+            var constraints = (args && ('constraints' in args)) ?
+                args.constraints :
+                toggleButtonGroupConstraints.getValueModel().getValue();
             var plotFunctions = (args && ('plotFunctions' in args)) ?
                 args.plotFunctions :
                 toggleButtonGroupPlotFunctions.getValueModel().getValue();
@@ -466,11 +466,12 @@
             var fracUnit = fracModel.getUnitTable()[fracModel.getUnitIndex()];
 
             /*
+             * Constrain Vout to Rref Taper
              * solve for whichever variable you want to generate
              * vOut = (1 / ((1 / rTaper1) + (1 / (rPot / 2)))) / ((1 / ((1 / rTaper1) + (1 / (rPot / 2)))) + (1 / ((1 / rTaper2) + (1 / (rPot / 2)))))
             */
             var callbackObj;
-            if (constrainVOut === 'selected') {
+            if (constraints[0] === 'selected') {
                 if (rRefTaper > 0.5) {
                     rTaper1 = Infinity;
                     callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
@@ -515,6 +516,36 @@
                     callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
                     spinBoxRTaper2.getValueModel().setValue(rTaper2);
                     spinBoxRTaper2.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                }
+            }
+
+            /*
+             * Constrain Rout to Rref Taper
+             * solve for whichever variable you want to generate
+             * rRef * rRefTaper = 1 / ((1 / (rPot / 2)) + (1 / rTaper1))
+             * rRef = 1 / ((1 / rPot) + (1 / rTaper1))
+             */
+            if (constraints[1] === 'selected') {
+                rTaper2 = Infinity;
+                callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
+                spinBoxRTaper2.getValueModel().setValue(rTaper2);
+                spinBoxRTaper2.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+
+                if (rRefTaper > 0.5) {
+                        rPot = -(rRef * rRefTaper) / (rRefTaper - 1);
+                        callbackObj = spinBoxRPot.getValueModel().signalDisconnect('valueChanged', rPotCallback);
+                        spinBoxRPot.getValueModel().setValue(rPot);
+                        spinBoxRPot.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+
+                        rTaper1 = (rRef * rRefTaper) / ((2 * rRefTaper) - 1);
+                        callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
+                        spinBoxRTaper1.getValueModel().setValue(rTaper1);
+                        spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                } else {
+                    rTaper1 = Infinity;
+                    callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
+                    spinBoxRTaper1.getValueModel().setValue(rTaper1);
+                    spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
                 }
             }
 
@@ -684,7 +715,6 @@
         /*
          * Plot Functions ToggleButtonGroup
          */
-
         var toggleButtonGroupPlotFunctions = chapatt.ToggleButtonGroup.new(document.getElementById('toggle-button-group-plot-functions'));
         toggleButtonGroupPlotFunctions.getValueModel().signalConnect('valueChanged',
             function(targetWidget, signalName, signalData, userData) {
@@ -782,11 +812,12 @@
         spinBoxRTaper2.getValueModel().signalConnect('valueChanged', rTaper2Callback);
 
         /*
-         * Constrain Taper ToggleButton
+         * Constraints ToggleButtonGroup
          */
-        var toggleButtonConstrainVOut = chapatt.ToggleButton.new(document.getElementById('toggle-button-constrain-vout'));
-        toggleButtonConstrainVOut.getValueModel().signalConnect('valueChanged', function(targetWidget, signalName, signalData, userData) {
-                plotAuto({constrainVOut: signalData});
+        var toggleButtonGroupConstraints = chapatt.ToggleButtonGroup.new(document.getElementById('toggle-button-group-constraints'));
+        toggleButtonGroupConstraints.getValueModel().signalConnect('valueChanged',
+            function(targetWidget, signalName, signalData, userData) {
+                plotAuto({constraints: signalData});
             }
         );
 
@@ -997,9 +1028,16 @@
   </div>
   </label>
 
-  <div id="toggle-button-constrain-vout" class="example-widget example-button example-toggle-button">
-    <span>Constrain V<sub>out</sub> to R<sub>ref</sub> Taper</span>
-  </div>
+  <label>Constrain to R<sub>ref</sub> Taper
+  <ul id="toggle-button-group-constraints" class="example-widget example-button-group">
+      <li class="example-button example-toggle-button button">
+          <div>V<sub>out</sub></div>
+      </li>
+      <li class="example-button example-toggle-button button">
+          <div>R<sub>out</sub></div>
+      </li>
+  </ul>
+  </lable>
   </div>
 
   <div style="border-style: solid; border-width: 2px; border-color: #00ff00; margin-bottom: 0.5em; padding: 0.5em;">
