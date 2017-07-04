@@ -43,7 +43,53 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        function resizeCanvas() {
+            var em = getEmPixels();
+            var canvas = document.getElementById('chart');
+
+            var windowW = Math.max(document.documentElement.clientWidth, window.innerWidth || 0); 
+            var windowH = Math.max(document.documentElement.clientHeight, window.innerHeight || 0); 
+            var controlsH = document.getElementById('controls').offsetHeight;
+
+            var canvasMinWToHRatio = 4 / 3;
+            var canvasMaxWToHRatio = 2;
+            var canvasMinW = 30 * em;
+            var canvasMinH = canvasMinW / ((canvasMinWToHRatio + canvasMaxWToHRatio) / 2);
+            var canvasMaxW = 0.95 * windowW;
+            var canvasMaxH = 0.95 * (windowH - controlsH);
+            var canvasW, canvasH;
+
+            if (canvasMaxW < canvasMinW || canvasMaxH < canvasMinH) {
+                if (canvasMaxW < canvasMinW && canvasMaxH < canvasMinH) {
+                    canvasW = canvasMinW;
+                    canvasH = canvasMinH;
+                } else if (canvasMaxW < canvasMinW) {
+                    canvasW = canvasMinW;
+                    canvasH = canvasW / canvasMinWToHRatio;
+                } else if (canvasMaxH < canvasMinH) {
+                    canvasH = canvasMinH;
+                    canvasW = canvasH * canvasMaxWToHRatio;
+                }
+            } else if (canvasMaxW > (canvasMaxH * canvasMaxWToHRatio)) {
+                canvasW = canvasMaxH * canvasMaxWToHRatio;
+                canvasH = canvasMaxH;
+            } else if (canvasMaxH > (canvasMaxW / canvasMinWToHRatio)) {
+                canvasH = canvasMaxW / canvasMinWToHRatio;
+                canvasW = canvasMaxW;
+            } else {
+                canvasW = canvasMaxW;
+                canvasH = canvasMaxH;
+            }
+
+            canvas.width = canvasW;
+            canvas.height = canvasH;
+
+            plotAuto();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
         function plot(fns, cursorX) {
+            var em = getEmPixels();
             var canvas = document.getElementById('chart');
             var ctx = canvas.getContext('2d');
             var chartProperties = {};
@@ -106,7 +152,7 @@
 
             chartProperties.cursorLineWidth = 1;
             chartProperties.graphLineWidth = 2;
-            chartProperties.fontSize = getEmPixels();
+            chartProperties.fontSize = em;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'rgb(255, 255, 255)';
@@ -916,6 +962,7 @@
                 helpContent.style.display = 'none';
         });
 
+        resizeCanvas();
         plotAuto();
     });
   </script>
@@ -984,6 +1031,7 @@
 
   <canvas id="chart" width="800" height="550" style="display: block"></canvas>
 
+  <div id="controls">
   <div id="instructions" class="help-box">
     <span class="button" title="Click to show/hide help">Help</span>
     <p class="content" style="display: none;">To change value in spinboxes and sliders, click arrows, scroll mouse wheel with cursor over control, click control and drag cursor up or down, or type value in box and press enter or click elsewhere. Optionally append an SI prefix to values (It is case-sensitive, e.g. 'm' means mili, 'M' means mega. 'u' means micro. The base unit symbol may be left off). The last unit used will be assumed for unsuffixed entries, and the increase/decrease functionality is scaled appropriately.</p>
@@ -1131,6 +1179,7 @@
 
   <div id="toggle-button-rref-curve" class="example-widget example-button example-toggle-button selected">
     <span>Fit Curve</span>
+  </div>
   </div>
   </div>
 
