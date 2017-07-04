@@ -426,133 +426,11 @@
             ctx.restore();
         }
 
-        function plotShuntedPot(args) {
-            var rRef = (args && ('rRef' in args)) ?
-                args.rRef :
-                spinBoxRRef.getValueModel().getValue();
-            var rRefTaper = (args && ('rRefTaper' in args)) ?
-                args.rRefTaper :
-                sliderRRefTaper.getValueModel().getValue();
-            var rPot = (args && ('rPot' in args)) ?
-                args.rPot :
-                spinBoxRPot.getValueModel().getValue();
-            var rTaper1 = (args && ('rTaper1' in args)) ?
-                args.rTaper1 :
-                spinBoxRTaper1.getValueModel().getValue();
-            var rTaper2 = (args && ('rTaper2' in args)) ?
-                args.rTaper2 :
-                spinBoxRTaper2.getValueModel().getValue();
-            var cursorX = (args && ('cursorX' in args)) ?
-                args.cursorX :
-                sliderCursorX.getValueModel().getValue();
-            var plotError = (args && ('plotError' in args)) ?
-                args.plotError :
-                toggleButtonPlotError.getValueModel().getValue();
-            var constraints = (args && ('constraints' in args)) ?
-                args.constraints :
-                toggleButtonGroupConstraints.getValueModel().getValue();
-            var plotFunctions = (args && ('plotFunctions' in args)) ?
-                args.plotFunctions :
-                toggleButtonGroupPlotFunctions.getValueModel().getValue();
-            var rRefCurve = (((args && ('rRefCurve' in args)) ?
-                args.rRefCurve :
-                toggleButtonRRefCurve.getValueModel().getValue()) === 'selected') ?
-                    true :
-                    false;
-
-            var rModel = spinBoxRTaper1.getValueModel();
-            var rUnit = rModel.getUnitTable()[rModel.getUnitIndex()];
-            var fracModel = sliderRRefTaper.getValueModel();
-            var fracUnit = fracModel.getUnitTable()[fracModel.getUnitIndex()];
-
-            /*
-             * Constrain Vout to Rref Taper
-             * solve for whichever variable you want to generate
-             * vOut = (1 / ((1 / rTaper1) + (1 / (rPot / 2)))) / ((1 / ((1 / rTaper1) + (1 / (rPot / 2)))) + (1 / ((1 / rTaper2) + (1 / (rPot / 2)))))
-            */
-            var callbackObj;
-            if (constraints[0] === 'selected') {
-                if (rRefTaper > 0.5) {
-                    rTaper1 = Infinity;
-                    callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
-                    spinBoxRTaper1.getValueModel().setValue(rTaper1);
-                    spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
-
-                    if (args && 'rTaper2' in args) {
-                        rPot = ((2 - (4 * rRefTaper)) * rTaper2) / (rRefTaper - 1);
-                        callbackObj = spinBoxRPot.getValueModel().signalDisconnect('valueChanged', rPotCallback);
-                        spinBoxRPot.getValueModel().setValue(rPot);
-                        spinBoxRPot.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
-                    } else {
-                        rTaper2 = (rPot - (rRefTaper * rPot)) / ((4 * rRefTaper) - 2);
-                        callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
-                        spinBoxRTaper2.getValueModel().setValue(rTaper2);
-                        spinBoxRTaper2.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
-                    }
-                } else if (rRefTaper < 0.5) {
-                    rTaper2 = Infinity;
-                    callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
-                    spinBoxRTaper2.getValueModel().setValue(rTaper2);
-                    spinBoxRTaper2.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
-
-                    if (args && 'rTaper1' in args) {
-                        rPot = ((2 - (4 * rRefTaper)) * rTaper1) / rRefTaper;
-                        callbackObj = spinBoxRPot.getValueModel().signalDisconnect('valueChanged', rPotCallback);
-                        spinBoxRPot.getValueModel().setValue(rPot);
-                        spinBoxRPot.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
-                    } else {
-                        rTaper1 = (rRefTaper * rPot) / (2 - (4 * rRefTaper));
-                        callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
-                        spinBoxRTaper1.getValueModel().setValue(rTaper1);
-                        spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
-                    }
-                } else if (rRefTaper = 0.5) {
-                    rTaper1 = Infinity;
-                    callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
-                    spinBoxRTaper1.getValueModel().setValue(rTaper1);
-                    spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
-
-                    rTaper2 = Infinity;
-                    callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
-                    spinBoxRTaper2.getValueModel().setValue(rTaper2);
-                    spinBoxRTaper2.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
-                }
-            }
-
-            /*
-             * Constrain Rout to Rref Taper
-             * solve for whichever variable you want to generate
-             * rRef * rRefTaper = 1 / ((1 / (rPot / 2)) + (1 / rTaper1))
-             * rRef = 1 / ((1 / rPot) + (1 / rTaper1))
-             */
-            if (constraints[1] === 'selected') {
-                rTaper2 = Infinity;
-                callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
-                spinBoxRTaper2.getValueModel().setValue(rTaper2);
-                spinBoxRTaper2.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
-
-                if (rRefTaper > 0.5) {
-                        rPot = -(rRef * rRefTaper) / (rRefTaper - 1);
-                        callbackObj = spinBoxRPot.getValueModel().signalDisconnect('valueChanged', rPotCallback);
-                        spinBoxRPot.getValueModel().setValue(rPot);
-                        spinBoxRPot.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
-
-                        rTaper1 = (rRef * rRefTaper) / ((2 * rRefTaper) - 1);
-                        callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
-                        spinBoxRTaper1.getValueModel().setValue(rTaper1);
-                        spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
-                } else {
-                    rTaper1 = Infinity;
-                    callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
-                    spinBoxRTaper1.getValueModel().setValue(rTaper1);
-                    spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
-                }
-            }
-
+        function plotShuntedPot(vars) {
             var fns = [];
-            if (plotFunctions[1] === 'selected') {
+            if (vars.plotFunctions[1] === 'selected') {
                 fns.push({
-                    fn: referenceTaperRout.bind(null, rRef, rRefTaper, rRefCurve),
+                    fn: referenceTaperRout.bind(null, vars.rRef, vars.rRefTaper, vars.rRefCurve),
                     name: 'Reference Rout',
                     color: 'rgb(0, 255, 0)',
                     pointFill: 'rgb(255, 255, 255)',
@@ -560,10 +438,10 @@
                     pointDash: [],
                     lineWidth: 2,
                     yScale: 'scale0',
-                    unit: rUnit
+                    unit: vars.rUnit
                 },
                 {
-                    fn: myTaperRout.bind(null, rPot, rTaper1, rTaper2),
+                    fn: myTaperRout.bind(null, vars.rPot, vars.rTaper1, vars.rTaper2),
                     name: 'Shunted Rout',
                     color: 'rgb(0, 0, 255)',
                     pointFill: 'rgb(255, 255, 255)',
@@ -571,12 +449,12 @@
                     pointDash: [],
                     lineWidth: 2,
                     yScale: 'scale0',
-                    unit: rUnit
+                    unit: vars.rUnit
                 });
             }
-            if (plotFunctions[2] === 'selected') {
+            if (vars.plotFunctions[2] === 'selected') {
                 fns.push({
-                    fn: referenceTaperRin.bind(null, rRef),
+                    fn: referenceTaperRin.bind(null, vars.rRef),
                     name: 'Reference Rin',
                     color: 'rgb(0, 255, 0)',
                     pointFill: 'rgb(255, 255, 255)',
@@ -584,10 +462,10 @@
                     pointDash: [3, 3],
                     lineWidth: 2,
                     yScale: 'scale0',
-                    unit: rUnit
+                    unit: vars.rUnit
                 },
                 {
-                    fn: myTaperRin.bind(null, rPot, rTaper1, rTaper2),
+                    fn: myTaperRin.bind(null, vars.rPot, vars.rTaper1, vars.rTaper2),
                     name: 'Shunted Rin',
                     color: 'rgb(0, 0, 255)',
                     pointFill: 'rgb(255, 255, 255)',
@@ -595,12 +473,12 @@
                     pointDash: [3, 3],
                     lineWidth: 2,
                     yScale: 'scale0',
-                    unit: rUnit
+                    unit: vars.rUnit
                 });
             }
-            if (plotFunctions[0] === 'selected') {
+            if (vars.plotFunctions[0] === 'selected') {
                 fns.push({
-                    fn: referenceTaperVout.bind(null, rRef, rRefTaper, rRefCurve),
+                    fn: referenceTaperVout.bind(null, vars.rRef, vars.rRefTaper, vars.rRefCurve),
                     name: 'Reference Vout',
                     color: 'rgb(0, 255, 0)',
                     pointFill: 'rgb(0, 255, 0)',
@@ -608,11 +486,11 @@
                     pointDash: [],
                     lineWidth: 2,
                     yScale: 'scale1',
-                    unit: fracUnit,
+                    unit: vars.fracUnit,
                     plotCursorPercentage: false
                 },
                 {
-                    fn: myTaperVout.bind(null, rPot, rTaper1, rTaper2),
+                    fn: myTaperVout.bind(null, vars.rPot, vars.rTaper1, vars.rTaper2),
                     name: 'Shunted Vout',
                     color: 'rgb(0, 0, 255)',
                     pointFill: 'rgb(0, 0, 255)',
@@ -620,18 +498,18 @@
                     pointDash: [],
                     lineWidth: 2,
                     yScale: 'scale1',
-                    unit: fracUnit,
+                    unit: vars.fracUnit,
                     plotCursorPercentage: false
                 });
             }
 
-            if (plotError == 'selected') {
-                if (plotFunctions[1] === 'selected') {
+            if (vars.plotError == 'selected') {
+                if (vars.plotFunctions[1] === 'selected') {
                     fns.push({
                         // Magnitude of error between Routs
                         fn: function(x) {
-                            var mine = myTaperRout(rPot, rTaper1, rTaper2, x);
-                            var ref = referenceTaperRout(rRef, rRefTaper, rRefCurve, x);
+                            var mine = myTaperRout(vars.rPot, vars.rTaper1, vars.rTaper2, x);
+                            var ref = referenceTaperRout(vars.rRef, vars.rRefTaper, vars.rRefCurve, x);
                             return Math.abs(mine - ref);
                         },
                         name: 'Rout Error',
@@ -641,16 +519,16 @@
                         pointDash: [],
                         lineWidth: 2,
                         yScale: 'scale0',
-                        unit: rUnit,
+                        unit: vars.rUnit,
                         plotCursorPercentage: false
                     });
                 }
-                if (plotFunctions[2] === 'selected') {
+                if (vars.plotFunctions[2] === 'selected') {
                     fns.push({
                         // Magnitude of error between Rins
                         fn: function(x) {
-                            var mine = myTaperRin(rPot, rTaper1, rTaper2, x);
-                            var ref = referenceTaperRin(rRef, x);
+                            var mine = myTaperRin(vars.rPot, vars.rTaper1, vars.rTaper2, x);
+                            var ref = referenceTaperRin(vars.rRef, x);
                             return Math.abs(mine - ref);
                         },
                         name: 'Rin Error',
@@ -660,16 +538,16 @@
                         pointDash: [3, 3],
                         lineWidth: 2,
                         yScale: 'scale0',
-                        unit: rUnit,
+                        unit: vars.rUnit,
                         plotCursorPercentage: false
                     });
                 }
-                if (plotFunctions[0] === 'selected') {
+                if (vars.plotFunctions[0] === 'selected') {
                     fns.push({
                         // Magnitude of error between Vouts
                         fn: function(x) {
-                            var mine = myTaperVout(rPot, rTaper1, rTaper2, x);
-                            var ref = referenceTaperVout(rRef, rRefTaper, rRefCurve, x);
+                            var mine = myTaperVout(vars.rPot, vars.rTaper1, vars.rTaper2, x);
+                            var ref = referenceTaperVout(vars.rRef, vars.rRefTaper, vars.rRefCurve, x);
                             return Math.abs(mine - ref);
                         },
                         name: 'Vout Error',
@@ -679,18 +557,149 @@
                         pointDash: [],
                         lineWidth: 2,
                         yScale: 'scale1',
-                        unit: fracUnit,
+                        unit: vars.fracUnit,
                         plotCursorPercentage: false
                     });
                 }
             }
 
-            plot(fns, cursorX);
+            plot(fns, vars.cursorX);
         }
 
         function plotAuto(args) {
-            if (toggleButtonAutoReplot.getValueModel().getValue() == 'selected')
-                plotShuntedPot(args);
+            var vars = {};
+
+            vars.rRef = (args && ('rRef' in args)) ?
+                args.rRef :
+                spinBoxRRef.getValueModel().getValue();
+            vars.rRefTaper = (args && ('rRefTaper' in args)) ?
+                args.rRefTaper :
+                sliderRRefTaper.getValueModel().getValue();
+            vars.rPot = (args && ('rPot' in args)) ?
+                args.rPot :
+                spinBoxRPot.getValueModel().getValue();
+            vars.rTaper1 = (args && ('rTaper1' in args)) ?
+                args.rTaper1 :
+                spinBoxRTaper1.getValueModel().getValue();
+            vars.rTaper2 = (args && ('rTaper2' in args)) ?
+                args.rTaper2 :
+                spinBoxRTaper2.getValueModel().getValue();
+            vars.cursorX = (args && ('cursorX' in args)) ?
+                args.cursorX :
+                sliderCursorX.getValueModel().getValue();
+            vars.autoReplot = (args && ('autoReplot' in args)) ?
+                args.autoReplot :
+                ((toggleButtonAutoReplot.getValueModel().getValue() == 'selected') ?
+                    true :
+                    false);
+            vars.plot = (args && ('plot' in args)) ? args.plot : false;
+            vars.fitROut = (args && ('fitROut' in args)) ? args.fitROut : false;
+            vars.plotError = (args && ('plotError' in args)) ?
+                args.plotError :
+                toggleButtonPlotError.getValueModel().getValue();
+            vars.constraints = (args && ('constraints' in args)) ?
+                args.constraints :
+                toggleButtonGroupConstraints.getValueModel().getValue();
+            vars.plotFunctions = (args && ('plotFunctions' in args)) ?
+                args.plotFunctions :
+                toggleButtonGroupPlotFunctions.getValueModel().getValue();
+            vars.rRefCurve = (((args && ('rRefCurve' in args)) ?
+                args.rRefCurve :
+                toggleButtonRRefCurve.getValueModel().getValue()) === 'selected') ?
+                    true :
+                    false;
+
+            var rModel = spinBoxRTaper1.getValueModel();
+            vars.rUnit = rModel.getUnitTable()[rModel.getUnitIndex()];
+            var fracModel = sliderRRefTaper.getValueModel();
+            vars.fracUnit = fracModel.getUnitTable()[fracModel.getUnitIndex()];
+
+            /*
+             * Constrain Vout to Rref Taper
+             * solve for whichever variable you want to generate
+             * vOut = (1 / ((1 / rTaper1) + (1 / (rPot / 2)))) / ((1 / ((1 / rTaper1) + (1 / (rPot / 2)))) + (1 / ((1 / rTaper2) + (1 / (rPot / 2)))))
+            */
+            var callbackObj;
+            if (vars.constraints[0] === 'selected') {
+                if (vars.rRefTaper > 0.5) {
+                    vars.rTaper1 = Infinity;
+                    callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
+                    spinBoxRTaper1.getValueModel().setValue(vars.rTaper1);
+                    spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+
+                    if (args && 'rTaper2' in args) {
+                        vars.rPot = ((2 - (4 * vars.rRefTaper)) * vars.rTaper2) / (vars.rRefTaper - 1);
+                        callbackObj = spinBoxRPot.getValueModel().signalDisconnect('valueChanged', rPotCallback);
+                        spinBoxRPot.getValueModel().setValue(vars.rPot);
+                        spinBoxRPot.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                    } else {
+                        vars.rTaper2 = (vars.rPot - (vars.rRefTaper * vars.rPot)) / ((4 * vars.rRefTaper) - 2);
+                        callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
+                        spinBoxRTaper2.getValueModel().setValue(vars.rTaper2);
+                        spinBoxRTaper2.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                    }
+                } else if (vars.rRefTaper < 0.5) {
+                    vars.rTaper2 = Infinity;
+                    callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
+                    spinBoxRTaper2.getValueModel().setValue(vars.rTaper2);
+                    spinBoxRTaper2.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+
+                    if (args && 'rTaper1' in args) {
+                        vars.rPot = ((2 - (4 * vars.rRefTaper)) * vars.rTaper1) / vars.rRefTaper;
+                        callbackObj = spinBoxRPot.getValueModel().signalDisconnect('valueChanged', rPotCallback);
+                        spinBoxRPot.getValueModel().setValue(vars.rPot);
+                        spinBoxRPot.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                    } else {
+                        vars.rTaper1 = (vars.rRefTaper * vars.rPot) / (2 - (4 * vars.rRefTaper));
+                        callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
+                        spinBoxRTaper1.getValueModel().setValue(vars.rTaper1);
+                        spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                    }
+                } else if (vars.rRefTaper = 0.5) {
+                    vars.rTaper1 = Infinity;
+                    callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
+                    spinBoxRTaper1.getValueModel().setValue(vars.rTaper1);
+                    spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+
+                    vars.rTaper2 = Infinity;
+                    callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
+                    spinBoxRTaper2.getValueModel().setValue(vars.rTaper2);
+                    spinBoxRTaper2.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                }
+            }
+
+            /*
+             * Fit Shunted Rout to Reference Rout
+             * solve for whichever variable you want to generate
+             * rRef * rRefTaper = 1 / ((1 / (rPot / 2)) + (1 / rTaper1))
+             * rRef = 1 / ((1 / rPot) + (1 / rTaper1))
+             */
+            if (vars.fitROut) {
+                vars.rTaper2 = Infinity;
+                callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
+                spinBoxRTaper2.getValueModel().setValue(vars.rTaper2);
+                spinBoxRTaper2.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+
+                if (vars.rRefTaper > 0.5) {
+                        vars.rPot = -(vars.rRef * vars.rRefTaper) / (vars.rRefTaper - 1);
+                        callbackObj = spinBoxRPot.getValueModel().signalDisconnect('valueChanged', rPotCallback);
+                        spinBoxRPot.getValueModel().setValue(vars.rPot);
+                        spinBoxRPot.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+
+                        vars.rTaper1 = (vars.rRef * vars.rRefTaper) / ((2 * vars.rRefTaper) - 1);
+                        callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
+                        spinBoxRTaper1.getValueModel().setValue(vars.rTaper1);
+                        spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                } else {
+                    vars.rTaper1 = Infinity;
+                    callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
+                    spinBoxRTaper1.getValueModel().setValue(vars.rTaper1);
+                    spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                }
+            }
+
+            if (vars.autoReplot || vars.plot)
+                plotShuntedPot(vars);
         }
 
         /*
@@ -698,7 +707,7 @@
          */
         var buttonPlot = chapatt.Button.new(document.getElementById('button-plot'), 1);
         buttonPlot.signalConnect('clicked', function() {
-            plotShuntedPot();
+            plotAuto({plot: true});
         });
 
         /*
@@ -708,7 +717,7 @@
         toggleButtonAutoReplot.getValueModel().signalConnect('valueChanged',
             function(targetWidget, signalName, signalData, userData) {
                 if (signalData == 'selected')
-                    plotShuntedPot();
+                    plotAuto({autoReplot: true});
             }
         );
 
@@ -718,7 +727,7 @@
         var toggleButtonGroupPlotFunctions = chapatt.ToggleButtonGroup.new(document.getElementById('toggle-button-group-plot-functions'));
         toggleButtonGroupPlotFunctions.getValueModel().signalConnect('valueChanged',
             function(targetWidget, signalName, signalData, userData) {
-                plotShuntedPot({plotFunctions: signalData});
+                plotAuto({plotFunctions: signalData});
             }
         );
 
@@ -728,7 +737,7 @@
         var toggleButtonPlotError = chapatt.ToggleButton.new(document.getElementById('toggle-button-plot-error'));
         toggleButtonPlotError.getValueModel().signalConnect('valueChanged',
             function(targetWidget, signalName, signalData, userData) {
-                plotShuntedPot({plotError: signalData});
+                plotAuto({plotError: signalData});
             }
         );
 
@@ -822,6 +831,14 @@
         );
 
         /*
+         * Fit Rout Button
+         */
+        var buttonFitROut = chapatt.Button.new(document.getElementById('button-fit-rout'), 1);
+        buttonFitROut.signalConnect('clicked', function() {
+            plotAuto({fitROut: true});
+        });
+
+        /*
          * Rref SpinBox
          */
         var spinBoxRRef = chapatt.SpinBox.new(document.getElementById('spin-box-r-ref'), resistanceUnits);
@@ -866,7 +883,7 @@
                 helpContent.style.display = 'none';
         });
 
-        plotShuntedPot();
+        plotAuto();
     });
   </script>
 
@@ -1038,6 +1055,10 @@
       </li>
   </ul>
   </lable>
+
+  <div id="button-fit-rout" class="example-widget example-button">
+    <div>Fit Shunted R<sub>out</sub> to Reference R<sub>out</sub></div>
+  </div>
   </div>
 
   <div style="border-style: solid; border-width: 2px; border-color: #00ff00; margin-bottom: 0.5em; padding: 0.5em;">
