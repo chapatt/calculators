@@ -618,7 +618,7 @@
              * Constrain Vout to Rref Taper
              * solve for whichever variable you want to generate
              * vOut = (1 / ((1 / rTaper1) + (1 / (rPot / 2)))) / ((1 / ((1 / rTaper1) + (1 / (rPot / 2)))) + (1 / ((1 / rTaper2) + (1 / (rPot / 2)))))
-            */
+             */
             var callbackObj;
             if (vars.constraints[0] === 'selected') {
                 if (vars.rRefTaper > 0.5) {
@@ -669,11 +669,44 @@
             }
 
             /*
+             * Constrain Rout to Rref Taper
+             * solve for whichever variable you want to generate
+             * 1 / ((1 / (rPot / 2)) + (1 / rTaper1)) = rRefTaper * (1 / ((1 / rPot) + (1 / rTaper1)))
+             */
+            callbackObj = {};
+            if (vars.constraints[1] === 'selected') {
+                vars.rTaper2 = Infinity;
+                callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
+                spinBoxRTaper2.getValueModel().setValue(vars.rTaper2);
+                spinBoxRTaper2.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+
+                if (vars.rRefTaper > 0.5) {
+                    if (args && 'rTaper1' in args) {
+                        vars.rPot = (vars.rTaper1 - (2 * vars.rRefTaper * vars.rTaper1)) / (vars.rRefTaper - 1);
+                        callbackObj = spinBoxRPot.getValueModel().signalDisconnect('valueChanged', rPotCallback);
+                        spinBoxRPot.getValueModel().setValue(vars.rPot);
+                        spinBoxRPot.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                    } else {
+                        vars.rTaper1 = (vars.rPot - (vars.rRefTaper * vars.rPot)) / ((2 * vars.rRefTaper) - 1);
+                        callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
+                        spinBoxRTaper1.getValueModel().setValue(vars.rTaper1);
+                        spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                    }
+                } else {
+                    vars.rTaper1 = Infinity;
+                    callbackObj = spinBoxRTaper1.getValueModel().signalDisconnect('valueChanged', rTaper1Callback);
+                    spinBoxRTaper1.getValueModel().setValue(vars.rTaper1);
+                    spinBoxRTaper1.getValueModel().signalConnect('valueChanged', callbackObj.callback, callbackObj.userData);
+                }
+            }
+
+            /*
              * Fit Shunted Rout to Reference Rout
              * solve for whichever variable you want to generate
              * rRef * rRefTaper = 1 / ((1 / (rPot / 2)) + (1 / rTaper1))
              * rRef = 1 / ((1 / rPot) + (1 / rTaper1))
              */
+            callbackObj = {};
             if (vars.fitROut) {
                 vars.rTaper2 = Infinity;
                 callbackObj = spinBoxRTaper2.getValueModel().signalDisconnect('valueChanged', rTaper2Callback);
@@ -971,7 +1004,7 @@
       <li class="example-button example-toggle-button button selected">
           <div>R<sub>out</sub></div>
       </li>
-      <li class="example-button example-toggle-button button selected">
+      <li class="example-button example-toggle-button button">
           <div>R<sub>in</sub></div>
       </li>
   </ul>
